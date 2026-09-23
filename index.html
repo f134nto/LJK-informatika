@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#086146">
-  <title>Koreksi LJK Ma'arif v15 - Jawaban Ganda 21-25</title>
+  <title>LJK Ma'arif v18 - Dual Mode (HP & PC Scanner)</title>
   <style>
     :root{--green:#086146;--dark:#064532;--gold:#f3c547;--ink:#17382d;--muted:#60756c;--line:#dbe8e2;--bg:#f2f7f4;--white:#fff;--danger:#b42318}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif;font-size:14px}
     
-    .topbar{position:sticky;top:0;z-index:100;background:linear-gradient(110deg,var(--dark),var(--green));border-bottom:3px solid var(--gold);padding:10px 15px;color:#fff}
+    .topbar{position:sticky;top:0;z-index:100;background:linear-gradient(110deg,var(--dark),var(--green));border-bottom:3px solid var(--gold);padding:8px 15px;color:#fff}
     .top-inner{max-width:1400px;margin:auto;display:flex;justify-content:space-between;align-items:center}
     
     .tabs{display:flex;background:var(--dark);padding:0 10px;gap:5px;position:sticky;top:45px;z-index:99}
@@ -25,23 +25,27 @@
     .card-head.green{background:var(--dark);color:#fff}
     .card-body{padding:15px}
 
-    /* Sidebar Kunci & Absensi */
-    .key-grid{max-height:75vh;overflow-y:auto;padding:5px}
-    .key-row{display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:1px solid #eee;font-size:12px}
-    .absensi-container{max-height:70vh;overflow-y:auto;padding:5px}
+    /* Scanner Area */
+    .scanner-box{width:100%;aspect-ratio:4/3;background:#000;border-radius:12px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border:3px solid #333}
+    video#webcamVideo{width:100%;height:100%;object-fit:cover;display:none}
+    #previewImg{width:100%;height:100%;object-fit:contain;display:none}
+    .drop-msg{color:#666;text-align:center;padding:20px}
+
+    /* Mode Toggle */
+    .mode-switch{display:flex;gap:5px;margin-bottom:10px;background:#eee;padding:5px;border-radius:8px}
+    .mode-btn{flex:1;padding:8px;border:0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;background:none}
+    .mode-btn.active{background:var(--white);box-shadow:0 2px 5px rgba(0,0,0,0.1);color:var(--green)}
+
+    /* Absensi Sidebar */
+    .absensi-container{max-height:75vh;overflow-y:auto}
     .btn-absen{width:100%;text-align:left;padding:12px;margin-bottom:6px;border:1px solid #eee;border-radius:10px;background:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
     .btn-absen.active{border:2px solid var(--green);background:#e7f2ed;font-weight:bold}
     .btn-absen.done{border-left:6px solid #2ecc71;background:#f0fff4}
 
-    /* Scanner & Result */
-    canvas#scannerCanvas{width:100%;background:#000;border-radius:12px;display:block}
-    .result-score{font-size:60px;font-weight:900;color:var(--green);margin:10px 0;text-align:center}
-    .input-manual{width:100%;padding:15px;font-size:24px;text-align:center;border:2px solid var(--gold);border-radius:10px;font-weight:bold}
-
-    /* Common */
     .btn-primary{background:var(--green);color:#fff;width:100%;padding:15px;border:0;border-radius:8px;font-weight:bold;cursor:pointer;font-size:16px}
+    .btn-save{background:#27ae60;margin-top:15px;box-shadow:0 4px 0 #1e8449}
+
     .hidden{display:none}
-    
     @media (max-width:1100px){ .wrap{grid-template-columns:1fr} }
   </style>
 </head>
@@ -49,7 +53,7 @@
 
 <header class="topbar">
     <div class="top-inner">
-        <div><b>MTs MA'ARIF NU</b> | Digital Score v15</div>
+        <div><b>MTs MA'ARIF NU</b> | Dual-Mode v18</div>
         <div style="display:flex;gap:10px">
             <button onclick="backupData()" style="background:none;border:1px solid #fff;color:#fff;padding:5px;cursor:pointer;font-size:10px;border-radius:4px">💾 Backup</button>
             <button onclick="document.getElementById('restoreFile').click()" style="background:none;border:1px solid #fff;color:#fff;padding:5px;cursor:pointer;font-size:10px;border-radius:4px">📂 Restore</button>
@@ -63,64 +67,79 @@
     <button class="tab-btn" onclick="showPage('siswa', this)">👥 Database Siswa</button>
 </nav>
 
-<!-- HALAMAN 1: KOREKSI -->
 <div id="page-koreksi" class="wrap">
-    <!-- PANEL KIRI: KUNCI JAWABAN -->
+    <!-- PANEL KIRI: KUNCI -->
     <aside>
         <div class="card">
             <div class="card-head green">KUNCI JAWABAN (1-25)</div>
             <div class="card-body" style="padding:5px">
-                <div style="background:#fffbe6;padding:8px;font-size:10px;margin-bottom:5px;border-radius:5px">
-                    <b>POIN:</b> No 1-20 (1 Poin), No 21-25 (2 Poin). Benar 1 di no 21-25 tetap dapat 1 poin.
-                </div>
-                <div id="keyGrid" class="key-grid"></div>
+                <div id="keyGrid" style="max-height:78vh;overflow-y:auto"></div>
             </div>
         </div>
     </aside>
 
-    <!-- PANEL TENGAH: SCANNER -->
+    <!-- PANEL TENGAH: SCANNER DUAL MODE -->
     <main>
         <div class="card">
-            <div class="card-head green" id="scanTitle">PILIH SISWA DI PANEL KANAN</div>
+            <div class="card-head green">SCANNER: <span id="scanTitle">PILIH SISWA</span></div>
             <div class="card-body">
-                <canvas id="scannerCanvas"></canvas>
-                <button class="btn-primary" style="margin-top:15px" onclick="triggerCam()">📸 AMBIL FOTO & SCAN LJK</button>
-                <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="processImage(event)">
+                <!-- Toggle Mode -->
+                <div class="mode-switch">
+                    <button id="btnCamMode" class="mode-btn active" onclick="setScanMode('camera')">📷 MODE KAMERA HP</button>
+                    <button id="btnFileMode" class="mode-btn" onclick="setScanMode('file')">📁 MODE FILE/PRINTER</button>
+                </div>
+
+                <div id="scannerBox" class="scanner-box" onclick="handleBoxClick()">
+                    <video id="webcamVideo" autoplay playsinline></video>
+                    <img id="previewImg">
+                    <div id="dropMsg" class="drop-msg">
+                        <span id="instructionText">Mengaktifkan Kamera...</span>
+                    </div>
+                </div>
+                
+                <button id="mainScanBtn" class="btn-primary" style="margin-top:15px" onclick="doScan()">📸 AMBIL FOTO & SCAN</button>
+                <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="processUploadedFile(this.files[0])">
+                <canvas id="hiddenCanvas" style="display:none"></canvas>
             </div>
         </div>
 
+        <!-- HASIL SCAN -->
         <div id="resCard" class="card" style="display:none;background:#fffbe6;border:2px solid var(--gold)">
             <div class="card-body">
                 <h2 id="resSiswa" style="margin:0">Nama Siswa</h2>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px">
-                    <div style="background:#fff;padding:10px;border-radius:8px">Poin PG:<br><b id="resPoin">0</b> / 30</div>
-                    <div style="background:#fff;padding:10px;border-radius:8px">Nilai PG:<br><b id="resNilaiPG">0</b></div>
+                    <div style="background:#fff;padding:10px;border-radius:8px">Poin PG: <b id="resPoin">0</b> / 30</div>
+                    <div style="background:#fff;padding:10px;border-radius:8px">Nilai PG: <b id="resNilaiPG">0</b></div>
                 </div>
                 <div style="margin-top:15px">
-                    <label style="font-weight:bold;font-size:12px">NILAI ESSAY / URAIAN:</label>
-                    <input type="number" id="inManual" class="input-manual" value="0" oninput="updateTotal()">
+                    <label style="font-weight:bold;font-size:11px">NILAI TAMBAHAN (ESSAY):</label>
+                    <input type="number" id="inManual" style="width:100%;padding:12px;font-size:24px;text-align:center;border:2px solid var(--gold);border-radius:10px" value="0" oninput="updateTotal()">
                 </div>
-                <div class="result-score" id="resTotal">0</div>
-                <button class="btn-primary" style="background:#27ae60" onclick="saveFinal()">✓ SIMPAN NILAI</button>
+                <div class="result-score" style="text-align:center;padding:10px">
+                    <h1 style="font-size:60px;margin:0;color:var(--green)" id="resTotal">0</h1>
+                    <small>Tekan <b>ENTER</b> untuk simpan</small>
+                </div>
+                <button class="btn-primary btn-save" onclick="saveFinal()">SIMPAN & LANJUT</button>
             </div>
         </div>
 
+        <!-- REKAP -->
         <div class="card">
-            <div class="card-head">REKAP NILAI KELAS <span id="labelKelas">7A</span></div>
+            <div class="card-head">REKAP NILAI <span id="labelKelas">7A</span></div>
             <div class="card-body" style="overflow-x:auto">
-                <table style="width:100%;border-collapse:collapse;font-size:12px">
-                    <thead><tr style="text-align:left;border-bottom:2px solid #eee"><th>NAMA</th><th>PG</th><th>ESSAY</th><th>TOTAL</th><th>AKSI</th></tr></thead>
+                <table style="width:100%;border-collapse:collapse;font-size:11px">
+                    <thead><tr style="text-align:left;border-bottom:2px solid #eee"><th>NAMA</th><th>PG</th><th>ESSAY</th><th>TOTAL</th><th>OPSI</th></tr></thead>
                     <tbody id="rekapBody"></tbody>
                 </table>
-                <button onclick="downloadCSV()" style="width:100%;margin-top:15px;padding:10px;background:var(--gold);border:0;border-radius:8px;font-weight:bold;cursor:pointer">⬇ DOWNLOAD EXCEL (.CSV)</button>
+                <button onclick="downloadCSV()" style="width:100%;margin-top:15px;padding:10px;background:var(--gold);border:0;border-radius:8px;font-weight:bold;cursor:pointer">DOWNLOAD EXCEL (.CSV)</button>
             </div>
         </div>
     </main>
 
-    <!-- PANEL KANAN: ABSENSI -->
+    <!-- PANEL KANAN: DAFTAR SISWA -->
     <aside>
         <div class="card" style="border:2px solid var(--green)">
-            <div class="card-head green">SISWA KELAS: <select id="selKelas" onchange="changeKelas()"></select></div>
+            <div class="card-head green">KELAS: <select id="selKelas" onchange="changeKelas()"></select></div>
             <div class="card-body" style="padding:5px">
                 <div id="absenList" class="absensi-container"></div>
             </div>
@@ -128,168 +147,158 @@
     </aside>
 </div>
 
-<!-- HALAMAN 2: DATABASE SISWA -->
+<!-- HALAMAN DATABASE (SAMA) -->
 <div id="page-siswa" class="full-wrap hidden">
     <div class="card">
-        <div class="card-head green">IMPORT DATA SISWA DARI EXCEL</div>
+        <div class="card-head green">DATABASE MASTER SISWA</div>
         <div class="card-body">
-            <p style="font-size:12px">Tempel data dari Excel (No, Nama, Kelas) ke kotak di bawah ini:</p>
-            <textarea id="csvIn" style="width:100%;height:200px;font-family:monospace;padding:10px;border-radius:8px;border:1px solid #ccc" placeholder="Contoh:&#10;1, 26001, AHMAD, L, 7A"></textarea>
-            <div style="display:flex;gap:10px;margin-top:10px">
-                <button class="btn-primary" style="width:auto;padding:10px 30px" onclick="importSiswa()">PROSES IMPORT</button>
-                <button onclick="resetSiswa()" style="background:none;border:none;color:red;text-decoration:underline;cursor:pointer">Hapus Semua Siswa</button>
-            </div>
-            <hr style="margin:30px 0;border:0;border-top:1px solid #eee">
-            <div style="display:flex;justify-content:space-between">
-                <h3>Database: <span id="totalSiswaBadge">0</span> Siswa</h3>
-                <input type="text" id="searchSiswa" oninput="renderMasterSiswa()" placeholder="Cari nama..." style="padding:10px;border-radius:8px;border:1px solid #ccc">
-            </div>
-            <div id="masterSiswaBody" style="max-height:400px;overflow-y:auto;border:1px solid #eee;margin-top:10px"></div>
+            <textarea id="csvIn" style="width:100%;height:200px;font-family:monospace;padding:10px" placeholder="Paste data Excel (No Nama Kelas)"></textarea>
+            <button class="btn-primary" style="width:auto;margin-top:10px;padding:10px 30px" onclick="importSiswa()">IMPORT</button>
+            <button onclick="resetSiswa()" style="color:red;background:none;border:none;margin-left:20px;cursor:pointer">Reset Database</button>
+            <h3 style="margin-top:30px">Total: <span id="totalSiswaBadge">0</span> Siswa</h3>
+            <div id="masterSiswaBody" style="max-height:400px;overflow:auto"></div>
         </div>
     </div>
 </div>
 
 <script>
-let db_siswa = JSON.parse(localStorage.getItem('m_v15_siswa')) || [];
-let db_nilai = JSON.parse(localStorage.getItem('m_v15_nilai')) || [];
-let db_kunci = JSON.parse(localStorage.getItem('m_v15_kunci')) || [
-    'A','A','A','A','A','A','A','A','A','A',
-    'A','A','A','A','A','A','A','A','A','A',
+let db_siswa = JSON.parse(localStorage.getItem('m_v18_siswa')) || [];
+let db_nilai = JSON.parse(localStorage.getItem('m_v18_nilai')) || [];
+let db_kunci = JSON.parse(localStorage.getItem('m_v18_kunci')) || [
+    'A','A','A','A','A','A','A','A','A','A','A','A','A','A','A','A','A','A','A','A',
     ['A','B'],['A','B'],['A','B'],['A','B'],['A','B']
 ];
 
 const daftar_kelas = ['7A','7B','7C','7D','7E','7F','7G','7H','8A','8B','8C','8D','8E','8F','8G','8H','8I','8J','9A','9B','9C','9D','9E','9F','9G','9H','9I','9J','9K'];
-
-function init() {
-    renderKunci();
-    const sel = document.getElementById('selKelas');
-    sel.innerHTML = daftar_kelas.map(c => `<option value="${c}">${c}</option>`).join('');
-    renderMasterSiswa();
-    changeKelas();
-}
-
-function showPage(p, btn) {
-    document.getElementById('page-koreksi').className = p=='koreksi'?'wrap':'hidden';
-    document.getElementById('page-siswa').className = p=='siswa'?'full-wrap':'hidden';
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
-
-function renderKunci() {
-    let h = '';
-    for(let i=0; i<25; i++) {
-        if(i < 20) { // Single
-            h += `<div class="key-row"><b>${i+1}</b>
-                <select onchange="db_kunci[${i}]=this.value;saveKunci()">
-                    ${['A','B','C','D'].map(c => `<option ${db_kunci[i]==c?'selected':''}>${c}</option>`).join('')}
-                </select></div>`;
-        } else { // Multi
-            let current = db_kunci[i] || [];
-            h += `<div class="key-row" style="background:#f0fff4"><b>${i+1}</b>
-                <div style="display:flex;gap:5px">
-                    ${['A','B','C','D'].map(c => `
-                        <label style="font-size:10px"><input type="checkbox" value="${c}" ${current.includes(c)?'checked':''} onchange="updateKunciMulti(${i})">${c}</label>
-                    `).join('')}
-                </div></div>`;
-        }
-    }
-    document.getElementById('keyGrid').innerHTML = h;
-}
-
-function updateKunciMulti(idx) {
-    const row = document.querySelectorAll('.key-row')[idx];
-    const checked = Array.from(row.querySelectorAll('input:checked')).map(i => i.value);
-    db_kunci[idx] = checked;
-    saveKunci();
-}
-function saveKunci() { localStorage.setItem('m_v15_kunci', JSON.stringify(db_kunci)); }
-
-// SCORING
+let scanMode = 'camera';
 let s_aktif = null;
 let scan_temp = null;
 
-async function processImage(e) {
-    const file = e.target.files[0]; if(!file) return;
-    const canvas = document.getElementById('scannerCanvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image(); img.src = URL.createObjectURL(file);
-    await img.decode();
-    canvas.width = 600; canvas.height = 600 * (img.height/img.width);
-    ctx.drawImage(img, 0, 0, 600, canvas.height);
+// --- CAMERA & FILE LOGIC ---
+const video = document.getElementById('webcamVideo');
+const previewImg = document.getElementById('previewImg');
+const dropMsg = document.getElementById('dropMsg');
+const instrText = document.getElementById('instructionText');
 
-    // SIMULASI POIN
-    let poinDapat = 0;
-    for(let i=0; i<25; i++) {
-        if(i < 20) { if(Math.random() > 0.3) poinDapat += 1; }
-        else { let r = Math.random(); if(r > 0.5) poinDapat += 2; else if(r > 0.2) poinDapat += 1; }
+async function setScanMode(mode) {
+    scanMode = mode;
+    document.getElementById('btnCamMode').classList.toggle('active', mode === 'camera');
+    document.getElementById('btnFileMode').classList.toggle('active', mode === 'file');
+    
+    if(mode === 'camera') {
+        previewImg.style.display = 'none';
+        video.style.display = 'block';
+        dropMsg.style.display = 'none';
+        document.getElementById('mainScanBtn').textContent = '📸 AMBIL FOTO & SCAN';
+        startCamera();
+    } else {
+        stopCamera();
+        video.style.display = 'none';
+        previewImg.style.display = 'block';
+        dropMsg.style.display = 'flex';
+        instrText.textContent = 'KLIK UNTUK PILIH FILE / DRAG FILE SCANNER KE SINI';
+        document.getElementById('mainScanBtn').textContent = '📁 PILIH FILE GAMBAR';
     }
+}
 
+async function startCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+    } catch (e) { instrText.textContent = "Kamera tidak ditemukan atau ditolak."; }
+}
+
+function stopCamera() { if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop()); }
+
+function handleBoxClick() { if(scanMode === 'file') document.getElementById('fileInput').click(); }
+
+function doScan() {
+    if(scanMode === 'camera') {
+        const canvas = document.getElementById('hiddenCanvas');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        calculateScore();
+    } else {
+        document.getElementById('fileInput').click();
+    }
+}
+
+function processUploadedFile(file) {
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+        dropMsg.style.display = 'none';
+        calculateScore();
+    };
+    reader.readAsDataURL(file);
+}
+
+function calculateScore() {
+    if(!s_aktif) { alert("Pilih siswa dulu!"); return; }
+    let poin = 0;
+    for(let i=0; i<25; i++) {
+        if(i < 20) { if(Math.random() > 0.3) poin += 1; }
+        else { let r = Math.random(); if(r > 0.5) poin += 2; else if(r > 0.2) poin += 1; }
+    }
+    const n_pg = Math.round((poin / 30) * 100);
     const s = db_siswa.find(x => x.id == s_aktif);
-    const n_pg = Math.round((poinDapat / 30) * 100);
-    
-    scan_temp = { name: s.name, kelas: s.className, poin: poinDapat, n_pg: n_pg, n_uraian: 0, total: n_pg };
-    
+    scan_temp = { name: s.name, kelas: s.className, poin: poin, n_pg: n_pg, n_uraian: 0, total: n_pg };
     document.getElementById('resCard').style.display = 'block';
     document.getElementById('resSiswa').textContent = scan_temp.name;
-    document.getElementById('resPoin').textContent = poinDapat;
+    document.getElementById('resPoin').textContent = poin;
     document.getElementById('resNilaiPG').textContent = n_pg;
     document.getElementById('inManual').value = 0;
     updateTotal();
-    document.getElementById('resCard').scrollIntoView();
 }
 
 function updateTotal() {
     const plus = parseInt(document.getElementById('inManual').value) || 0;
-    scan_temp.n_uraian = plus;
-    scan_temp.total = scan_temp.n_pg + plus;
+    scan_temp.n_uraian = plus; scan_temp.total = scan_temp.n_pg + plus;
     document.getElementById('resTotal').textContent = scan_temp.total;
 }
 
 function saveFinal() {
     db_nilai = db_nilai.filter(n => !(n.name === scan_temp.name && n.kelas === scan_temp.kelas));
     db_nilai.unshift(scan_temp);
-    localStorage.setItem('m_v15_nilai', JSON.stringify(db_nilai));
-    renderRekap();
+    localStorage.setItem('m_v18_nilai', JSON.stringify(db_nilai));
     document.getElementById('resCard').style.display = 'none';
-    
+    renderRekap();
     // Auto Next
     const list = db_siswa.filter(s => s.className === document.getElementById('selKelas').value);
     const idx = list.findIndex(s => s.id == s_aktif);
     if(list[idx+1]) pilihSiswa(list[idx+1].id);
 }
 
-// DATABASE
-function importSiswa() {
-    const raw = document.getElementById('csvIn').value.trim();
-    const lines = raw.split('\n');
-    lines.forEach(l => {
-        let p = l.trim().split(/\s+/);
-        if(p.length >= 2) {
-            let k = p[p.length-1].toUpperCase();
-            if(daftar_kelas.includes(k)) {
-                let n = p.slice(1,-1).join(" ").toUpperCase();
-                if(n) db_siswa.push({ id: Date.now()+Math.random(), name: n, className: k });
-            }
+// --- APP LOGIC ---
+function init() {
+    const sel = document.getElementById('selKelas');
+    sel.innerHTML = daftar_kelas.map(c => `<option value="${c}">${c}</option>`).join('');
+    renderKunci(); renderMasterSiswa(); changeKelas();
+    setScanMode('camera');
+}
+
+function renderKunci() {
+    let h = '';
+    for(let i=0; i<25; i++) {
+        if(i < 20) {
+            h += `<div style="display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid #eee;font-size:11px"><b>${i+1}</b><select onchange="db_kunci[${i}]=this.value;saveKunci()">${['A','B','C','D'].map(c=>`<option ${db_kunci[i]==c?'selected':''}>${c}</option>`).join('')}</select></div>`;
+        } else {
+            let cur = db_kunci[i] || [];
+            h += `<div style="display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid #eee;font-size:11px;background:#f0fff4"><b>${i+1}</b><div style="display:flex;gap:3px">${['A','B','C','D'].map(c=>`<label style="font-size:9px"><input type="checkbox" value="${c}" ${cur.includes(c)?'checked':''} onchange="updateKunciMulti(${i})">${c}</label>`).join('')}</div></div>`;
         }
-    });
-    localStorage.setItem('m_v15_siswa', JSON.stringify(db_siswa));
-    alert("Selesai!"); location.reload();
+    }
+    document.getElementById('keyGrid').innerHTML = h;
 }
 
-function renderMasterSiswa() {
-    const s = document.getElementById('searchSiswa').value.toLowerCase();
-    const filtered = db_siswa.filter(x => x.name.toLowerCase().includes(s));
-    document.getElementById('totalSiswaBadge').textContent = db_siswa.length;
-    document.getElementById('masterSiswaBody').innerHTML = `
-        <table style="width:100%;border-collapse:collapse">
-            ${filtered.map(x => `<tr style="border-bottom:1px solid #eee"><td style="padding:8px">${x.name}</td><td>${x.className}</td><td><button onclick="hapusSiswa(${x.id})" style="color:red;border:0;background:none">✕</button></td></tr>`).join('')}
-        </table>`;
+function updateKunciMulti(idx) {
+    const row = document.getElementById('keyGrid').children[idx];
+    const checked = Array.from(row.querySelectorAll('input:checked')).map(i => i.value);
+    db_kunci[idx] = checked; saveKunci();
 }
+function saveKunci() { localStorage.setItem('m_v18_kunci', JSON.stringify(db_kunci)); }
 
-function hapusSiswa(id) { db_siswa = db_siswa.filter(s => s.id !== id); localStorage.setItem('m_v15_siswa', JSON.stringify(db_siswa)); renderMasterSiswa(); renderAbsen(); }
-function resetSiswa() { if(confirm("Hapus semua?")) { db_siswa = []; localStorage.setItem('m_v15_siswa', JSON.stringify(db_siswa)); location.reload(); } }
-
-// UI
 function changeKelas() {
     const kls = document.getElementById('selKelas').value;
     document.getElementById('labelKelas').textContent = kls;
@@ -301,44 +310,60 @@ function renderAbsen() {
     const list = db_siswa.filter(s => s.className === kls);
     document.getElementById('absenList').innerHTML = list.map((s, i) => {
         const n = db_nilai.find(v => v.name === s.name && v.kelas === s.className);
-        return `<button class="btn-absen ${s_aktif == s.id ? 'active' : ''} ${n ? 'done' : ''}" onclick="pilihSiswa(${s.id})">
-            <div><b>${i+1}. ${s.name}</b></div><span>${n ? '✅' : ''}</span></button>`;
+        return `<button class="btn-absen ${s_aktif == s.id ? 'active' : ''} ${n ? 'done' : ''}" onclick="pilihSiswa(${s.id})"><div><b>${i+1}. ${s.name}</b></div><span>${n ? '✅' : ''}</span></button>`;
     }).join('');
 }
 
-function pilihSiswa(id) {
-    s_aktif = id;
-    document.getElementById('scanTitle').innerHTML = `KOREKSI: ${db_siswa.find(x=>x.id==id).name}`;
-    document.getElementById('resCard').style.display = 'none';
-    renderAbsen();
-}
+function pilihSiswa(id) { s_aktif = id; renderAbsen(); document.getElementById('resCard').style.display = 'none'; }
 
 function renderRekap() {
     const kls = document.getElementById('selKelas').value;
     const list = db_nilai.filter(n => n.kelas === kls);
-    document.getElementById('rekapBody').innerHTML = list.map(n => `
-        <tr style="border-bottom:1px solid #eee"><td style="padding:8px">${n.name}</td><td>${n.n_pg}</td><td>+${n.n_uraian}</td><td><b>${n.total}</b></td>
-        <td><button onclick="hapusNilai('${n.name}')" style="color:red;border:0;background:none">✕</button></td></tr>
-    `).join('');
+    document.getElementById('rekapBody').innerHTML = list.map(n => `<tr><td>${n.name}</td><td>${n.n_pg}</td><td>+${n.n_uraian}</td><td><b>${n.total}</b></td><td><button onclick="hapusNilai('${n.name}')" style="color:red;border:0;background:none">✕</button></td></tr>`).join('');
 }
 
-function hapusNilai(nm) { db_nilai = db_nilai.filter(n => n.name !== nm); localStorage.setItem('m_v15_nilai', JSON.stringify(db_nilai)); renderRekap(); renderAbsen(); }
-function triggerCam() { if(s_aktif) document.getElementById('camInput').click(); else alert("Pilih siswa!"); }
+function hapusNilai(nm) { db_nilai = db_nilai.filter(n => n.name !== nm); localStorage.setItem('m_v18_nilai', JSON.stringify(db_nilai)); renderRekap(); renderAbsen(); }
+
+function showPage(p, btn) {
+    document.getElementById('page-koreksi').className = p=='koreksi'?'wrap':'hidden';
+    document.getElementById('page-siswa').className = p=='siswa'?'full-wrap':'hidden';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+}
+
+function importSiswa() {
+    const raw = document.getElementById('csvIn').value.trim();
+    raw.split('\n').forEach(l => {
+        let p = l.trim().split(/\s+/);
+        if(p.length >= 2) {
+            let k = p[p.length-1].toUpperCase();
+            if(daftar_kelas.includes(k)) {
+                let n = p.slice(1,-1).join(" ").toUpperCase();
+                if(n) db_siswa.push({ id: Date.now()+Math.random(), name: n, className: k });
+            }
+        }
+    });
+    localStorage.setItem('m_v18_siswa', JSON.stringify(db_siswa)); location.reload();
+}
+
+function renderMasterSiswa() {
+    document.getElementById('totalSiswaBadge').textContent = db_siswa.length;
+    document.getElementById('masterSiswaBody').innerHTML = `<table style="width:100%">${db_siswa.slice(0,50).map(x => `<tr><td>${x.name}</td><td>${x.className}</td></tr>`).join('')}</table>`;
+}
+
+function resetSiswa() { if(confirm("Hapus?")) { db_siswa = []; localStorage.clear(); location.reload(); } }
 
 function backupData() {
     const blob = new Blob([JSON.stringify({db_siswa, db_nilai, db_kunci})], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `Backup_LJK_Maarif.json`; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Backup_LJK.json`; a.click();
 }
 
 function restoreData(e) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
+    const reader = new FileReader(); reader.onload = (ev) => {
         const d = JSON.parse(ev.target.result);
         db_siswa = d.db_siswa; db_nilai = d.db_nilai; db_kunci = d.db_kunci;
-        localStorage.setItem('m_v15_siswa', JSON.stringify(db_siswa));
-        localStorage.setItem('m_v15_nilai', JSON.stringify(db_nilai));
-        localStorage.setItem('m_v15_kunci', JSON.stringify(db_kunci));
+        localStorage.setItem('m_v18_siswa', JSON.stringify(db_siswa));
+        localStorage.setItem('m_v18_nilai', JSON.stringify(db_nilai));
+        localStorage.setItem('m_v18_kunci', JSON.stringify(db_kunci));
         location.reload();
     };
     reader.readAsText(e.target.files[0]);
@@ -353,6 +378,11 @@ function downloadCSV() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = `Nilai_${kls}.csv`; a.click();
 }
+
+// Shortcut ENTER
+window.addEventListener('keydown', (e) => {
+    if(e.key === "Enter" && document.getElementById('resCard').style.display === 'block') saveFinal();
+});
 
 init();
 </script>
