@@ -1,0 +1,2 @@
+# LJK-informatika
+LJK informatika
