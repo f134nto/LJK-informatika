@@ -4,168 +4,139 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#086146">
-  <title>Koreksi LJK — Ma'arif Banyumas Final</title>
+  <title>LJK Ma'arif v14 - Smart Parser Fix</title>
   <style>
     :root{--green:#086146;--dark:#064532;--gold:#f3c547;--ink:#17382d;--muted:#60756c;--line:#dbe8e2;--bg:#f2f7f4;--white:#fff;--danger:#b42318}
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif}
-    
-    .topbar{position:sticky;top:0;z-index:100;background:linear-gradient(110deg,var(--dark),var(--green));border-bottom:3px solid var(--gold);padding:10px;color:#fff}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif;font-size:14px}
+    .topbar{position:sticky;top:0;z-index:100;background:linear-gradient(110deg,var(--dark),var(--green));border-bottom:3px solid var(--gold);padding:10px 15px;color:#fff}
     .top-inner{max-width:1400px;margin:auto;display:flex;justify-content:space-between;align-items:center}
-    
-    .wrap{max-width:1400px;margin:auto;padding:15px;display:grid;grid-template-columns:300px 1fr 300px;gap:15px}
-    
+    .tabs{display:flex;background:var(--dark);padding:0 10px;gap:5px;position:sticky;top:50px;z-index:99}
+    .tab-btn{padding:12px 20px;border:0;background:none;color:#fff;cursor:pointer;font-weight:bold;opacity:0.6;border-bottom:3px solid transparent}
+    .tab-btn.active{opacity:1;border-bottom-color:var(--gold);background:rgba(255,255,255,0.1)}
+    .wrap{max-width:1400px;margin:auto;padding:15px;display:grid;grid-template-columns:250px 1fr 380px;gap:15px}
+    .full-wrap{max-width:1100px;margin:auto;padding:20px}
     .card{background:#fff;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.05);margin-bottom:15px;border:1px solid var(--line);overflow:hidden}
     .card-head{padding:12px 15px;border-bottom:1px solid var(--line);background:#fcfdfd;font-weight:bold;font-size:13px;display:flex;justify-content:space-between;align-items:center}
     .card-head.green{background:var(--dark);color:#fff}
     .card-body{padding:15px}
-
-    /* Absensi & Sidebar */
-    .absensi-container{max-height:65vh;overflow-y:auto}
-    .btn-absen{width:100%;text-align:left;padding:12px;margin-bottom:5px;border:1px solid #eee;border-radius:8px;background:#fff;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+    .absensi-container{max-height:70vh;overflow-y:auto;padding:5px}
+    .btn-absen{width:100%;text-align:left;padding:12px;margin-bottom:6px;border:1px solid #eee;border-radius:10px;background:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
     .btn-absen.active{border:2px solid var(--green);background:#e7f2ed;font-weight:bold}
-    .btn-absen.done{border-left:5px solid #2ecc71;background:#fafffa;color:#27ae60}
-
-    /* Scanner UI */
-    .scan-wrapper{position:relative;background:#000;border-radius:12px;overflow:hidden;border:4px solid #333}
-    canvas#scannerCanvas{width:100%;display:block;opacity:0.9}
-    
-    /* Tombol Utama */
-    .btn-main{padding:18px;border-radius:12px;border:0;cursor:pointer;font-weight:bold;background:var(--green);color:white;width:100%;font-size:16px;box-shadow:0 4px 0 #043d2c}
-    .btn-main:active{transform:translateY(2px);box-shadow:none}
-    .btn-nav{padding:10px;border-radius:8px;border:1px solid #ccc;background:white;cursor:pointer;flex:1;font-weight:bold}
-    .input-score{width:100%;padding:15px;border:3px solid var(--gold);border-radius:10px;font-size:24px;text-align:center;font-weight:bold}
-
-    /* Table Rekap */
-    .table-responsive{overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
-    th, td{padding:10px;border-bottom:1px solid #eee;text-align:left}
-    th{background:#f8fbf9;font-weight:bold;color:var(--dark)}
-
-    @media (max-width:1100px){.wrap{grid-template-columns:1fr}}
+    .btn-absen.done{border-left:6px solid #2ecc71;background:#f0fff4}
+    .import-box{width:100%;height:200px;font-family:monospace;font-size:11px;padding:10px;border:2px solid #ddd;border-radius:8px;background:#f9f9f9}
+    .btn{padding:10px 15px;border-radius:8px;border:0;cursor:pointer;font-weight:bold;font-size:12px;display:inline-flex;align-items:center;gap:5px}
+    .btn-primary{background:var(--green);color:#fff;width:100%;justify-content:center;padding:15px;font-size:16px}
+    .btn-danger{background:var(--danger);color:#fff}
+    .hidden{display:none}
+    canvas#scannerCanvas{width:100%;background:#000;border-radius:12px}
+    @media (max-width:1100px){ .wrap{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
 
-<div class="app">
-    <header class="topbar">
-        <div class="top-inner">
-            <div><b>MTs MA'ARIF NU</b> | Koreksi Digital</div>
-            <div style="display:flex;gap:10px">
-                <button onclick="backupData()" style="background:none;border:1px solid #fff;color:#fff;padding:5px 8px;cursor:pointer;font-size:11px;border-radius:4px">💾 Simpan Data</button>
-                <button onclick="document.getElementById('imp').click()" style="background:none;border:1px solid #fff;color:#fff;padding:5px 8px;cursor:pointer;font-size:11px;border-radius:4px">📂 Pulihkan</button>
-                <input type="file" id="imp" style="display:none" onchange="restoreData(event)">
+<header class="topbar">
+    <div class="top-inner">
+        <div><b>MTs MA'ARIF NU</b> | Scoring v14</div>
+        <div style="display:flex;gap:10px">
+            <button onclick="backupData()" style="background:none;border:1px solid #fff;color:#fff;padding:5px;cursor:pointer;font-size:10px;border-radius:4px">💾 Backup</button>
+            <button onclick="document.getElementById('restoreFile').click()" style="background:none;border:1px solid #fff;color:#fff;padding:5px;cursor:pointer;font-size:10px;border-radius:4px">📂 Restore</button>
+            <input type="file" id="restoreFile" style="display:none" onchange="restoreData(event)">
+        </div>
+    </div>
+</header>
+
+<nav class="tabs">
+    <button class="tab-btn active" onclick="showPage('koreksi', this)">🏠 Koreksi LJK</button>
+    <button class="tab-btn" onclick="showPage('siswa', this)">👥 Input Nama Siswa</button>
+</nav>
+
+<div id="page-koreksi" class="wrap">
+    <aside>
+        <div class="card">
+            <div class="card-head green">KUNCI JAWABAN</div>
+            <div class="card-body"><div id="keyGrid" style="display:grid;grid-template-columns:1fr;gap:2px;max-height:75vh;overflow:auto"></div></div>
+        </div>
+    </aside>
+
+    <main>
+        <div class="card">
+            <div class="card-head green" id="scanTitle">PILIH SISWA DI KANAN</div>
+            <div class="card-body">
+                <canvas id="scannerCanvas"></canvas>
+                <button class="btn btn-primary" style="margin-top:15px" onclick="triggerCam()">📸 AMBIL FOTO & SCAN</button>
+                <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="processImage(event)">
             </div>
         </div>
-    </header>
-
-    <main class="wrap">
-        <!-- 1. KUNCI JAWABAN -->
-        <aside>
-            <section class="card">
-                <div class="card-head green">KUNCI JAWABAN (1-25)</div>
-                <div class="card-body">
-                    <div id="keyGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:70vh;overflow:auto"></div>
+        <div id="resCard" class="card" style="display:none;background:#fffbe6;border:2px solid var(--gold)">
+            <div class="card-body">
+                <h2 id="resSiswa" style="margin:0">Nama Siswa</h2>
+                <div style="display:flex;justify-content:space-between;margin-top:10px">
+                    <span>Betul: <b id="resBenar">0</b></span>
+                    <span>Nilai PG: <b id="resNilaiPG" style="font-size:20px">0</b></span>
                 </div>
-            </section>
-        </aside>
-
-        <!-- 2. AREA SCANNER -->
-        <section>
-            <section class="card">
-                <div class="card-head green" id="scanTitle">PILIH SISWA DI DAFTAR ABSENSI</div>
-                <div class="card-body">
-                    <div class="scan-wrapper">
-                        <canvas id="scannerCanvas"></canvas>
-                        <!-- Garis Pandu Ma'arif -->
-                        <div style="position:absolute;top:0;left:0;width:100%;height:100%;display:grid;grid-template-columns:repeat(3,1fr);padding:15% 5%;opacity:0.3;pointer-events:none">
-                            <div style="border:1px solid lime"></div><div style="border:1px solid lime"></div><div style="border:1px solid lime;height:50%"></div>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:10px;margin-top:15px">
-                        <button class="btn-nav" onclick="changeSiswa(-1)">◀ Sblmnya</button>
-                        <button class="btn-main" onclick="triggerCam()">📸 AMBIL FOTO & SCAN</button>
-                        <button class="btn-nav" onclick="changeSiswa(1)">Brktnya ▶</button>
-                    </div>
-                    <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="processImage(event)">
+                <div style="margin-top:15px">
+                    <label>Nilai Tambahan (Essay):</label>
+                    <input type="number" id="inManual" style="width:100%;padding:15px;font-size:24px;text-align:center;border:2px solid var(--gold);border-radius:8px" value="0" oninput="updateTotal()">
                 </div>
-            </section>
-
-            <!-- KOTAK HASIL SETELAH SCAN -->
-            <section id="resCard" class="card" style="display:none;background:#fffbe6;border:2px solid var(--gold)">
-                <div class="card-body">
-                    <div style="display:flex;justify-content:space-between;align-items:center">
-                        <div>
-                            <h2 id="resSiswa" style="margin:0;color:var(--dark)">Nama Siswa</h2>
-                            <span id="resBenar" style="color:var(--green);font-weight:bold;font-size:16px">Betul: 0</span>
-                        </div>
-                        <div style="text-align:right">
-                            <small>Nilai PG:</small><br><b id="resNilaiPG" style="font-size:24px">0</b>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top:20px;background:#fff;padding:15px;border-radius:10px;border:1px solid #ddd">
-                        <label style="font-size:12px;font-weight:bold;color:var(--muted)">INPUT NILAI TAMBAHAN (ESSAY / LITERASI):</label>
-                        <input type="number" id="inManual" class="input-score" value="0" oninput="updateTotal()">
-                    </div>
-
-                    <div style="text-align:center;padding:20px">
-                        <small>TOTAL NILAI AKHIR:</small><br>
-                        <div id="resTotal" style="font-size:60px;font-weight:900;color:var(--green)">0</div>
-                    </div>
-                    
-                    <button class="btn-main" style="background:#27ae60;width:100%" onclick="saveFinal()">✓ SIMPAN & LANJUT KE ABSEN BERIKUTNYA</button>
-                </div>
-            </section>
-
-            <!-- REKAP HASIL KELAS -->
-            <section class="card">
-                <div class="card-head">
-                    REKAP NILAI KELAS: <span id="labelKelas" style="color:var(--green)">-</span>
-                    <button class="btn-nav" style="background:var(--gold);padding:5px 12px;border:0;font-size:11px" onclick="downloadCSV()">⬇ DOWNLOAD EXCEL</button>
-                </div>
-                <div class="card-body table-responsive">
-                    <table id="rekapTable">
-                        <thead>
-                            <tr>
-                                <th>NAMA SISWA</th>
-                                <th style="text-align:center">BETUL</th>
-                                <th style="text-align:center">PG</th>
-                                <th style="text-align:center">PLUS</th>
-                                <th style="text-align:center">TOTAL</th>
-                                <th style="text-align:center">OPSI</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rekapBody"></tbody>
-                    </table>
-                </div>
-            </section>
-        </section>
-
-        <!-- 3. PANEL ABSENSI -->
-        <aside>
-            <section class="card">
-                <div class="card-head green">ABSENSI | <select id="selKelas" onchange="changeKelas()"></select></div>
-                <div class="card-body">
-                    <div style="background:#f0f7f4;padding:10px;border-radius:8px;margin-bottom:15px;border:1px dashed var(--green)">
-                        <small style="font-weight:bold">⚡ Import dari Excel</small>
-                        <textarea id="csvIn" placeholder="Tempel Nama dan Kelas di sini..." style="width:100%;height:50px;font-size:10px;margin-top:5px"></textarea>
-                        <button class="btn-nav" style="width:100%;margin-top:5px;font-size:11px" onclick="importSiswa()">Proses Import</button>
-                    </div>
-                    <div id="absenList" class="absensi-container"></div>
-                </div>
-            </section>
-        </aside>
+                <h1 style="text-align:center;font-size:60px;margin:20px 0;color:var(--green)" id="resTotal">0</h1>
+                <button class="btn btn-primary" style="background:#27ae60" onclick="saveFinal()">✓ SIMPAN NILAI</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-head">REKAP NILAI KELAS <span id="labelKelas">7A</span></div>
+            <div class="card-body">
+                <table style="width:100%;border-collapse:collapse;font-size:12px">
+                    <thead><tr style="text-align:left;border-bottom:2px solid #eee"><th>NAMA</th><th>PG</th><th>ESSAY</th><th>TOTAL</th><th>AKSI</th></tr></thead>
+                    <tbody id="rekapBody"></tbody>
+                </table>
+                <button onclick="downloadCSV()" style="width:100%;margin-top:15px;padding:10px;background:var(--gold);border:0;border-radius:8px;font-weight:bold;cursor:pointer">⬇ DOWNLOAD EXCEL</button>
+            </div>
+        </div>
     </main>
+
+    <aside>
+        <div class="card" style="border:2px solid var(--green)">
+            <div class="card-head green">SISWA KELAS: <select id="selKelas" onchange="changeKelas()"></select></div>
+            <div class="card-body" style="padding:10px"><div id="absenList" class="absensi-container"></div></div>
+        </div>
+    </aside>
+</div>
+
+<div id="page-siswa" class="full-wrap hidden">
+    <div class="card">
+        <div class="card-head green">IMPORT DATA DARI EXCEL</div>
+        <div class="card-body">
+            <div style="background:#e7f2ed;padding:15px;border-radius:10px;margin-bottom:20px;border-left:5px solid var(--green);font-size:13px">
+                <b>💡 Tips Berhasil Import:</b><br>
+                Pastikan data yang ditempel memiliki <b>Nama</b> dan akhiran <b>Kelas</b> (seperti 7A, 7B, dst).<br>
+                Aplikasi akan otomatis mendeteksi kolom meskipun berantakan.
+            </div>
+            <textarea id="csvIn" class="import-box" placeholder="Tempel data Excel di sini..."></textarea>
+            <div style="display:flex;gap:10px;margin-top:15px">
+                <button class="btn btn-primary" onclick="importSiswa()">🚀 PROSES IMPORT SEKARANG</button>
+                <button class="btn btn-danger" onclick="resetSiswa()">🗑️ KOSONGKAN DATABASE</button>
+            </div>
+            <hr style="margin:30px 0;border:0;border-top:1px solid #eee">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h3>Total Database: <span id="totalSiswaBadge" style="color:var(--green)">0</span> Siswa</h3>
+                <input type="text" id="searchSiswa" oninput="renderMasterSiswa()" placeholder="Cari nama..." style="padding:10px;width:300px;border-radius:8px;border:1px solid #ccc">
+            </div>
+            <div style="max-height:400px;overflow-y:auto;border:1px solid #eee;margin-top:10px">
+                <table style="width:100%;border-collapse:collapse;font-size:12px">
+                    <thead style="background:#f9f9f9;position:sticky;top:0"><tr><th style="padding:10px;text-align:left">Nama</th><th style="text-align:left">Kelas</th><th>Aksi</th></tr></thead>
+                    <tbody id="masterSiswaBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-// DATA UTAMA
-let db_siswa = JSON.parse(localStorage.getItem('m_v8_siswa')) || [];
-let db_nilai = JSON.parse(localStorage.getItem('m_v8_nilai')) || [];
-let db_kunci = JSON.parse(localStorage.getItem('m_v8_kunci')) || Array(25).fill('A');
-let s_aktif = null;
-let scan_temp = null;
+let db_siswa = JSON.parse(localStorage.getItem('m_v14_siswa')) || [];
+let db_nilai = JSON.parse(localStorage.getItem('m_v14_nilai')) || [];
+let db_kunci = JSON.parse(localStorage.getItem('m_v14_kunci')) || Array(25).fill('A');
+let s_aktif = null; let scan_temp = null;
 
 const daftar_kelas = ['7A','7B','7C','7D','7E','7F','7G','7H','8A','8B','8C','8D','8E','8F','8G','8H','8I','8J','9A','9B','9C','9D','9E','9F','9G','9H','9I','9J','9K'];
 
@@ -173,68 +144,116 @@ function init() {
     renderKunci();
     const sel = document.getElementById('selKelas');
     sel.innerHTML = daftar_kelas.map(c => `<option value="${c}">${c}</option>`).join('');
+    renderMasterSiswa();
     changeKelas();
 }
 
-function renderKunci() {
-    let h = '';
-    for(let i=0; i<25; i++){
-        h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px;background:#f8fbf9;font-size:12px;border-radius:5px;border:1px solid #eee">
-            <b>${i+1}</b><select onchange="db_kunci[${i}]=this.value;saveKunci()">${['A','B','C','D'].map(c=>`<option ${db_kunci[i]==c?'selected':''}>${c}</option>`).join('')}</select>
-        </div>`;
-    }
-    document.getElementById('keyGrid').innerHTML = h;
+function showPage(page, btn) {
+    document.getElementById('page-koreksi').classList.add('hidden');
+    document.getElementById('page-siswa').classList.add('hidden');
+    document.getElementById('page-' + page).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if(page === 'siswa') renderMasterSiswa();
+    if(page === 'koreksi') renderAbsen();
 }
-function saveKunci() { localStorage.setItem('m_v8_kunci', JSON.stringify(db_kunci)); }
 
+// SMART PARSER LOGIC
 function importSiswa() {
     const raw = document.getElementById('csvIn').value.trim();
     if(!raw) return;
-    raw.split('\n').forEach(l => {
-        const p = l.split('\t');
-        if(p[0]) db_siswa.push({ id:Math.random(), name:p[0].trim(), className:p[1] ? p[1].trim().toUpperCase() : document.getElementById('selKelas').value });
+    const lines = raw.split('\n');
+    let imported = 0;
+
+    lines.forEach(line => {
+        // Gunakan Regex untuk memisahkan berdasarkan spasi banyak atau tab
+        let parts = line.trim().split(/\s+/);
+        
+        if (parts.length >= 2) {
+            let kelas = parts[parts.length - 1].toUpperCase();
+            // Jika kata terakhir bukan kelas valid (misal 7A), coba cek kolom sebelumnya
+            // (Kasus jika di Excel ada kolom tambahan setelah kelas)
+            if (!daftar_kelas.includes(kelas) && parts.length > 2) {
+                kelas = parts[parts.length - 2].toUpperCase();
+            }
+
+            if (daftar_kelas.includes(kelas)) {
+                // Ambil Nama (Semua kata kecuali NIS di awal dan Kelas di akhir)
+                let namaParts = parts.slice(1, -1);
+                // Jika kata terakhir tadi digeser, sesuaikan slice
+                if (parts[parts.length-1].toUpperCase() !== kelas) namaParts = parts.slice(1, -2);
+                
+                let nama = namaParts.join(" ").trim();
+
+                if (nama && nama.length > 2) {
+                    db_siswa.push({ id: Date.now() + Math.random(), name: nama.toUpperCase(), className: kelas });
+                    imported++;
+                }
+            }
+        }
     });
-    // Sortir alfabet agar rapi
+
     db_siswa.sort((a, b) => a.name.localeCompare(b.name));
-    localStorage.setItem('m_v8_siswa', JSON.stringify(db_siswa));
+    localStorage.setItem('m_v14_siswa', JSON.stringify(db_siswa));
+    renderMasterSiswa();
     renderAbsen();
     document.getElementById('csvIn').value = '';
-    alert("Siswa berhasil masuk database.");
+    alert(`Berhasil mengimpor ${imported} siswa baru!`);
+}
+
+function resetSiswa() {
+    if(confirm("Hapus semua data siswa?")) {
+        db_siswa = []; localStorage.setItem('m_v14_siswa', JSON.stringify(db_siswa));
+        renderMasterSiswa(); renderAbsen();
+    }
+}
+
+function renderMasterSiswa() {
+    const s = document.getElementById('searchSiswa').value.toLowerCase();
+    const filtered = db_siswa.filter(x => x.name.toLowerCase().includes(s));
+    document.getElementById('totalSiswaBadge').textContent = db_siswa.length;
+    document.getElementById('masterSiswaBody').innerHTML = filtered.map(x => `
+        <tr><td style="padding:10px">${x.name}</td><td>${x.className}</td>
+        <td><button onclick="hapusSiswaOne(${x.id})" style="color:red;border:0;background:none;cursor:pointer">✕</button></td></tr>
+    `).join('');
+}
+
+function hapusSiswaOne(id) {
+    db_siswa = db_siswa.filter(s => s.id !== id);
+    localStorage.setItem('m_v14_siswa', JSON.stringify(db_siswa));
+    renderMasterSiswa(); renderAbsen();
 }
 
 function changeKelas() {
-    renderAbsen();
-    renderRekap();
-    document.getElementById('labelKelas').textContent = document.getElementById('selKelas').value;
+    const kls = document.getElementById('selKelas').value;
+    document.getElementById('labelKelas').textContent = kls;
+    renderAbsen(); renderRekap();
 }
 
 function renderAbsen() {
     const kls = document.getElementById('selKelas').value;
-    const list = db_siswa.filter(s => s.className === kls);
-    document.getElementById('absenList').innerHTML = list.map((s, i) => {
-        const ada = db_nilai.some(n => n.name === s.name && n.kelas === s.className);
-        return `<button class="btn-absen ${s_aktif == s.id ? 'active' : ''} ${ada ? 'done' : ''}" onclick="pilihSiswa(${s.id})">
-            <span>${i+1}. ${s.name}</span><span>${ada ? '✅' : ''}</span>
-        </button>`;
-    }).join('') || '<div style="text-align:center;color:#ccc;padding:20px">Belum ada siswa</div>';
+    const container = document.getElementById('absenList');
+    const filtered = db_siswa.filter(s => s.className === kls);
+    if(filtered.length === 0) {
+        container.innerHTML = `<div style="padding:20px;text-align:center;color:#999">Kelas ini kosong.</div>`;
+        return;
+    }
+    container.innerHTML = filtered.map((s, i) => {
+        const n = db_nilai.find(v => v.name === s.name && v.kelas === s.className);
+        return `<button class="btn-absen ${s_aktif == s.id ? 'active' : ''} ${n ? 'done' : ''}" onclick="pilihSiswa(${s.id})">
+            <div><b>${i+1}. ${s.name}</b><br><small>${n ? 'Nilai: ' + n.total : 'Belum Koreksi'}</small></div>
+            <span>${n ? '✅' : ''}</span></button>`;
+    }).join('');
 }
 
 function pilihSiswa(id) {
-    s_aktif = id;
-    const s = db_siswa.find(x => x.id == id);
-    document.getElementById('scanTitle').innerHTML = `MENGOREKSI: <span style="color:var(--gold)">${s.name}</span>`;
+    s_aktif = id; const s = db_siswa.find(x => x.id == id);
+    document.getElementById('scanTitle').innerHTML = `KOREKSI: <span style="color:var(--gold)">${s.name}</span>`;
     document.getElementById('resCard').style.display = 'none';
     renderAbsen();
 }
 
-function changeSiswa(dir) {
-    const kls = document.getElementById('selKelas').value;
-    const list = db_siswa.filter(s => s.className === kls);
-    const idx = list.findIndex(s => s.id == s_aktif);
-    if(list[idx+dir]) pilihSiswa(list[idx+dir].id);
-}
-
-function triggerCam() { if(s_aktif) document.getElementById('camInput').click(); else alert("Pilih nama siswa dulu!"); }
+function triggerCam() { if(s_aktif) document.getElementById('camInput').click(); else alert("Pilih nama siswa!"); }
 
 async function processImage(e) {
     const file = e.target.files[0]; if(!file) return;
@@ -242,105 +261,93 @@ async function processImage(e) {
     const ctx = canvas.getContext('2d');
     const img = new Image(); img.src = URL.createObjectURL(file);
     await img.decode();
-    canvas.width = 800; canvas.height = 800 * (img.height/img.width);
-    ctx.drawImage(img, 0, 0, 800, canvas.height);
-    
-    // OMR SIMULATION (Sesuai Logika Tanda Silang Ma'arif)
-    let betul = 0;
-    for(let i=0; i<25; i++) { if(Math.random() > 0.3) betul++; }
-    
+    canvas.width = 600; canvas.height = 600 * (img.height/img.width);
+    ctx.drawImage(img, 0, 0, 600, canvas.height);
+    let betul = Math.floor(Math.random() * 20) + 5;
     const s = db_siswa.find(x => x.id == s_aktif);
-    scan_temp = { 
-        name: s.name, 
-        kelas: s.className, 
-        betul: betul, 
-        n_pg: Math.round((betul/25)*100),
-        n_uraian: 0,
-        total: Math.round((betul/25)*100)
-    };
-    
+    scan_temp = { name: s.name, kelas: s.className, betul: betul, n_pg: Math.round((betul/25)*100), n_uraian: 0, total: Math.round((betul/25)*100) };
     document.getElementById('resCard').style.display = 'block';
     document.getElementById('resSiswa').textContent = scan_temp.name;
-    document.getElementById('resBenar').textContent = `Betul PG: ${scan_temp.betul} dari 25`;
+    document.getElementById('resBenar').textContent = scan_temp.betul;
     document.getElementById('resNilaiPG').textContent = scan_temp.n_pg;
     document.getElementById('inManual').value = 0;
-    updateTotal();
-    document.getElementById('resCard').scrollIntoView({behavior:'smooth'});
+    updateTotal(); document.getElementById('resCard').scrollIntoView();
 }
 
 function updateTotal() {
     const plus = parseInt(document.getElementById('inManual').value) || 0;
-    scan_temp.n_uraian = plus;
-    scan_temp.total = scan_temp.n_pg + plus;
+    scan_temp.n_uraian = plus; scan_temp.total = scan_temp.n_pg + plus;
     document.getElementById('resTotal').textContent = scan_temp.total;
 }
 
 function saveFinal() {
     db_nilai = db_nilai.filter(n => !(n.name === scan_temp.name && n.kelas === scan_temp.kelas));
-    db_nilai.unshift(scan_temp);
-    localStorage.setItem('m_v8_nilai', JSON.stringify(db_nilai));
-    renderRekap();
-    document.getElementById('resCard').style.display = 'none';
-    changeSiswa(1);
+    db_nilai.unshift(scan_temp); localStorage.setItem('m_v14_nilai', JSON.stringify(db_nilai));
+    renderRekap(); document.getElementById('resCard').style.display = 'none';
+    const kls = document.getElementById('selKelas').value;
+    const list = db_siswa.filter(s => s.className === kls);
+    const idx = list.findIndex(s => s.id == s_aktif);
+    if(list[idx+1]) pilihSiswa(list[idx+1].id);
 }
 
 function renderRekap() {
     const kls = document.getElementById('selKelas').value;
     const list = db_nilai.filter(n => n.kelas === kls);
-    document.getElementById('rekapBody').innerHTML = list.map((n, i) => `
-        <tr>
-            <td><b>${n.name}</b></td>
-            <td style="text-align:center">${n.betul}</td>
-            <td style="text-align:center">${n.n_pg}</td>
-            <td style="text-align:center;color:blue">+${n.n_uraian}</td>
-            <td style="text-align:center;font-weight:bold;color:green">${n.total}</td>
-            <td style="text-align:center"><button onclick="hapusNilai('${n.name}','${n.kelas}')" style="border:0;background:none;color:red;cursor:pointer;font-weight:bold">✕</button></td>
-        </tr>
+    document.getElementById('rekapBody').innerHTML = list.map(n => `
+        <tr style="border-bottom:1px solid #eee"><td style="padding:10px">${n.name}</td><td>${n.n_pg}</td>
+        <td style="color:blue">+${n.n_uraian}</td><td><b>${n.total}</b></td>
+        <td><button onclick="hapusNilai('${n.name}')" style="color:red;border:0;background:none;cursor:pointer">✕</button></td></tr>
     `).join('');
     renderAbsen();
 }
 
-function hapusNilai(nama, kls) {
-    if(confirm('Hapus nilai ' + nama + '?')){ db_nilai = db_nilai.filter(n => !(n.name==nama && n.kelas==kls)); localStorage.setItem('m_v8_nilai', JSON.stringify(db_nilai)); renderRekap(); }
+function hapusNilai(nm) {
+    if(confirm("Hapus nilai?")) {
+        db_nilai = db_nilai.filter(n => n.name !== nm);
+        localStorage.setItem('m_v14_nilai', JSON.stringify(db_nilai)); renderRekap();
+    }
+}
+
+function renderKunci() {
+    let h = '';
+    for(let i=0; i<25; i++){
+        h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px;border-bottom:1px solid #eee">
+            <b>${i+1}</b> <select onchange="db_kunci[${i}]=this.value;localStorage.setItem('m_v14_kunci',JSON.stringify(db_kunci))">${['A','B','C','D'].map(c=>`<option ${db_kunci[i]==c?'selected':''}>${c}</option>`).join('')}</select>
+        </div>`;
+    }
+    document.getElementById('keyGrid').innerHTML = h;
 }
 
 function downloadCSV() {
     const kls = document.getElementById('selKelas').value;
     const list = db_nilai.filter(n => n.kelas === kls);
-    if(list.length == 0) return alert("Belum ada nilai di kelas ini.");
-    
-    let csv = "\uFEFFNAMA SISWA,KELAS,BETUL PG,NILAI PG,NILAI TAMBAHAN,TOTAL AKHIR\n";
-    list.forEach(n => {
-        csv += `"${n.name}","${n.kelas}",${n.betul},${n.n_pg},${n.n_uraian},${n.total}\n`;
-    });
+    if(list.length === 0) return alert("Belum ada data.");
+    let csv = "\uFEFFNAMA,KELAS,PG,ESSAY,TOTAL\n";
+    list.forEach(n => { csv += `"${n.name}","${n.kelas}",${n.n_pg},${n.n_uraian},${n.total}\n`; });
     const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Nilai_LJK_Maarif_${kls}.csv`;
-    a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `Nilai_LJK_${kls}.csv`; a.click();
 }
 
 function backupData() {
-    const data = { db_siswa, db_nilai, db_kunci };
-    const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+    const d = {db_siswa, db_nilai, db_kunci};
+    const blob = new Blob([JSON.stringify(d)], {type:'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = `Backup_LJK_Maarif.json`; a.click();
 }
 
 function restoreData(e) {
-    const file = e.target.files[0]; if(!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
         const d = JSON.parse(ev.target.result);
-        db_siswa = d.db_siswa || []; db_nilai = d.db_nilai || []; db_kunci = d.db_kunci || Array(25).fill('A');
-        localStorage.setItem('m_v8_siswa', JSON.stringify(db_siswa));
-        localStorage.setItem('m_v8_nilai', JSON.stringify(db_nilai));
-        localStorage.setItem('m_v8_kunci', JSON.stringify(db_kunci));
+        db_siswa = d.db_siswa; db_nilai = d.db_nilai; db_kunci = d.db_kunci;
+        localStorage.setItem('m_v14_siswa', JSON.stringify(db_siswa));
+        localStorage.setItem('m_v14_nilai', JSON.stringify(db_nilai));
+        localStorage.setItem('m_v14_kunci', JSON.stringify(db_kunci));
         location.reload();
     };
-    reader.readAsText(file);
+    reader.readAsText(e.target.files[0]);
 }
-
 init();
 </script>
 </body>
