@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#086146">
-  <title>Aplikasi LJK Ma'arif - Pemindai Tinta Nyata</title>
+  <title>Aplikasi LJK Ma'arif - Custom Layout OMR</title>
   <style>
     :root{--green:#086146;--dark:#064532;--gold:#f3c547;--ink:#17382d;--muted:#60756c;--line:#dbe8e2;--bg:#f2f7f4;--white:#fff;--danger:#b42318}
     *{box-sizing:border-box}
@@ -25,16 +25,31 @@
     .card-head.green{background:var(--dark);color:#fff}
     .card-body{padding:15px}
 
-    /* Area Scanner Utama */
-    .scanner-box{width:100%;height:450px;background:#000;border-radius:12px;position:relative;overflow:hidden;border:3px solid #333}
-    video#webcamVideo{width:100%;height:100%;object-fit:fill;display:none;position:absolute;top:0;left:0;}
-    #previewImg{width:100%;height:100%;object-fit:fill;display:none;position:absolute;top:0;left:0;}
+    /* AREA SCANNER - Dibuat Proporsi A4 (1 : 1.414) */
+    .scanner-box {
+        width: 100%;
+        max-width: 500px; /* Batas maksimal lebar */
+        aspect-ratio: 1 / 1.414; /* Paksa rasio sesuai ukuran Kertas A4 */
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+        border: 3px solid #333;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    video#webcamVideo, #previewImg {
+        width: 100%;
+        height: 100%;
+        object-fit: fill; /* Paksa penuhi kotak rasio A4 */
+        position: absolute; top:0; left:0;
+    }
     .drop-msg{color:#666;text-align:center;padding:20px;position:absolute;top:50%;transform:translateY(-50%);width:100%;}
     
-    /* Overlay Garis Bantu Target Scanner */
+    /* Overlay Garis Bantu Target Scanner Sesuai Gambar */
     #omrOverlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;z-index:10;}
-    .row-guide{position:absolute;height:3%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed rgba(255,0,0,0.3);}
-    .box-guide{width:20%;height:100%;border:1px solid rgba(255,215,0,0.9);border-radius:2px;background:rgba(255,0,0,0.15);}
+    .row-guide{position:absolute; background:rgba(0,0,255,0.05);} /* Sedikit highlight baris */
+    .box-guide{position:absolute; border:1.5px solid rgba(255,0,0,0.9); border-radius:1px; background:rgba(255,0,0,0.15);}
 
     /* Mode Switch */
     .mode-switch{display:flex;gap:5px;margin-bottom:10px;background:#eee;padding:5px;border-radius:8px}
@@ -63,7 +78,7 @@
 
 <header class="topbar">
     <div class="top-inner">
-        <div><b>APLIKASI LJK MA'ARIF</b> | Full Version (Scanner Tinta)</div>
+        <div><b>APLIKASI LJK MA'ARIF</b> | Full Custom Scanner</div>
         <div style="display:flex;gap:10px">
             <button onclick="backupData()" style="background:none;border:1px solid #fff;color:#fff;padding:5px 10px;cursor:pointer;font-size:11px;border-radius:4px">💾 BACKUP DATA</button>
             <button onclick="document.getElementById('restoreFile').click()" style="background:none;border:1px solid #fff;color:#fff;padding:5px 10px;cursor:pointer;font-size:11px;border-radius:4px">📂 RESTORE</button>
@@ -92,10 +107,10 @@
     <main>
         <div class="card">
             <div class="card-head green">PEMINDAI LJK: <span id="scanTitle" style="color:var(--gold);font-weight:bold;">PILIH NAMA SISWA DULU ➔</span></div>
-            <div class="card-body">
+            <div class="card-body" style="text-align:center;">
                 <div class="mode-switch">
-                    <button id="btnCamMode" class="mode-btn active" onclick="setScanMode('camera')">📷 KAMERA HP (LIVE SCAN)</button>
-                    <button id="btnFileMode" class="mode-btn" onclick="setScanMode('file')">📁 SCANNER PRINTER (MODE FILE)</button>
+                    <button id="btnCamMode" class="mode-btn active" onclick="setScanMode('camera')">📷 KAMERA HP</button>
+                    <button id="btnFileMode" class="mode-btn" onclick="setScanMode('file')">📁 SCAN GAMBAR FULL A4</button>
                 </div>
 
                 <div id="scannerBox" class="scanner-box" onclick="handleBoxClick()">
@@ -111,13 +126,11 @@
                 </div>
                 
                 <p style="font-size:11px;color:var(--danger);text-align:center;margin:8px 0;line-height:1.4;">
-                    <b>PENTING:</b> Pastikan kotak jawaban (A,B,C,D) di gambar <b>jatuh pas di dalam kotak merah</b> di layar. 
-                    <br><i>Saran: Gunakan Mode File/Scanner Printer untuk akurasi 100%.</i>
+                    <b>TIPS:</b> Scan menggunakan mesin printer, pastikan ukuran kertas di layar terisi penuh dari pojok ke pojok agar kotak merah pas dengan isi tabel.
                 </p>
-                <button id="mainScanBtn" class="btn-primary" onclick="doScan()">📸 AMBIL GAMBAR & DETEKSI TINTA</button>
+                <button id="mainScanBtn" class="btn-primary" onclick="doScan()">📸 PROSES GAMBAR & NILAI</button>
                 <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="processUploadedFile(this.files[0])">
                 
-                <!-- Canvas tersembunyi untuk membaca memori gambar -->
                 <canvas id="hiddenCanvas" style="display:none"></canvas>
             </div>
         </div>
@@ -127,9 +140,7 @@
             <div class="card-body">
                 <h2 id="resSiswa" style="margin:0;color:var(--dark);text-align:center;border-bottom:1px solid #ddd;padding-bottom:10px;">Nama Siswa</h2>
                 
-                <div id="logDeteksi">
-                    <!-- Log pembacaan scanner muncul di sini -->
-                </div>
+                <div id="logDeteksi"></div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px">
                     <div style="background:#fff;padding:12px;border-radius:8px;text-align:center;border:1px solid var(--line);">
@@ -141,7 +152,7 @@
                 </div>
                 
                 <div style="margin-top:15px;background:#fff;padding:15px;border-radius:8px;border:1px solid var(--line);">
-                    <label style="font-weight:bold;font-size:12px;display:block;text-align:center;margin-bottom:8px;">NILAI TAMBAHAN (ESSAY/URAIAN):</label>
+                    <label style="font-weight:bold;font-size:12px;display:block;text-align:center;margin-bottom:8px;">NILAI TAMBAHAN (ESSAY/LITERASI):</label>
                     <input type="number" id="inManual" style="width:100%;padding:12px;font-size:30px;font-weight:bold;text-align:center;border:2px solid var(--gold);border-radius:8px;background:#fcfdfd" value="0" oninput="updateTotal()">
                 </div>
                 
@@ -209,7 +220,6 @@
 // ==========================================
 // 1. PENGATURAN DATA LOKAL (DATABASE)
 // ==========================================
-// Tetap pakai nama key m_v18 supaya data lama tidak hilang jika ada
 let db_siswa = JSON.parse(localStorage.getItem('m_v18_siswa')) || [];
 let db_nilai = JSON.parse(localStorage.getItem('m_v18_nilai')) || [];
 let db_kunci = JSON.parse(localStorage.getItem('m_v18_kunci')) || [
@@ -223,7 +233,7 @@ let s_aktif = null;
 let scan_temp = null;
 
 // ==========================================
-// 2. TATA LETAK KAMERA & SCANNER (GRID)
+// 2. TATA LETAK KAMERA & SCANNER (CUSTOM LJK IMAGE)
 // ==========================================
 const video = document.getElementById('webcamVideo');
 const previewImg = document.getElementById('previewImg');
@@ -231,21 +241,37 @@ const dropMsg = document.getElementById('dropMsg');
 const instrText = document.getElementById('instructionText');
 const omrOverlay = document.getElementById('omrOverlay');
 
-// Fungsi merender kotak-kotak penanda (Target Overlay)
+// Fungsi pembangun koordinat sesuai foto kertas asli
 function createOMRGrid() {
     let html = '';
     for(let i=0; i<25; i++) {
-        let isCol1 = i < 13;
-        let row = isCol1 ? i : i - 13;
+        // Tentukan Kolom ke berapa (0 = soal 1-10, 1 = soal 11-20, 2 = soal 21-25)
+        let col = i < 10 ? 0 : (i < 20 ? 1 : 2);
+        // Tentukan baris ke berapa di dalam tabel tersebut (0 sampai 9)
+        let row = i < 10 ? i : (i < 20 ? i - 10 : i - 20);
         
-        let leftPct = isCol1 ? 5 : 55; // Kolom 1 (Kiri) di 5%, Kolom 2 (Kanan) di 55% lebar layar
-        let topPct = 5 + (row * 7);    // Baris pertama di 5% atas layar, tiap nomor turun 7%
+        // Persentase posisi berdasarkan hitungan pixel asli kertas A4
+        let leftPct = col === 0 ? 13.5 : (col === 1 ? 40.0 : 66.5);
+        let topPct = 28.3 + (row * 2.43); 
+        let widthPct = 21; // Lebar total 1 buah tabel
+        let heightPct = 2.4; // Tinggi 1 baris soal
         
-        html += `
-        <div class="row-guide" style="left:${leftPct}%; top:${topPct}%; width:40%;" data-idx="${i}">
-            <div style="font-size:10px;font-weight:bold;color:white;width:10%;text-shadow:1px 1px 2px #000;">${i+1}.</div>
-            <div class="box-guide"></div><div class="box-guide"></div><div class="box-guide"></div><div class="box-guide"></div>
-        </div>`;
+        // Bungkus baris
+        html += `<div class="row-guide" style="left:${leftPct}%; top:${topPct}%; width:${widthPct}%; height:${heightPct}%;">`;
+        
+        // Kolom "NO" di kertas besarnya sekitar 28% dari tabel.
+        // Maka, A, B, C, D mulai dari 28% dst. Tiap kotak opsi besarnya 18%.
+        for(let j=0; j<4; j++) {
+            // Kita setting ukuran kotak pembaca HANYA 10% dan tinggi 70% di tengah kotak asli
+            // Tujuannya agar GARIS TABEL BERWARNA HITAM tidak ikut terbaca sebagai tinta!
+            let boxLeft = 28 + (j * 18) + 4; // Margin kiri aman 4% 
+            let boxTop = 15; // Margin atas aman 15%
+            let boxW = 10;
+            let boxH = 70;
+            
+            html += `<div class="box-guide" style="left:${boxLeft}%; top:${boxTop}%; width:${boxW}%; height:${boxH}%;"></div>`;
+        }
+        html += `</div>`;
     }
     omrOverlay.innerHTML = html;
 }
@@ -261,17 +287,17 @@ async function setScanMode(mode) {
     if(mode === 'camera') {
         previewImg.style.display = 'none';
         video.style.display = 'block';
-        omrOverlay.style.display = 'block'; // Tampilkan garis bantu
+        omrOverlay.style.display = 'block';
         dropMsg.style.display = 'none';
         document.getElementById('mainScanBtn').textContent = '📸 AMBIL FOTO & DETEKSI TINTA';
         startCamera();
     } else {
         stopCamera();
         video.style.display = 'none';
-        omrOverlay.style.display = 'block'; // Tetap tampilkan garis bantu untuk file (sebagai alat pas)
+        omrOverlay.style.display = 'block'; 
         previewImg.style.display = 'block';
         dropMsg.style.display = 'flex';
-        instrText.innerHTML = 'Klik area hitam ini untuk pilih file Scanner<br>Atau klik tombol di bawah';
+        instrText.innerHTML = 'Klik area hitam ini untuk pilih file Gambar LJK';
         document.getElementById('mainScanBtn').textContent = '📁 BUKA FILE GAMBAR LJK';
     }
 }
@@ -280,34 +306,23 @@ async function startCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         video.srcObject = stream;
-    } catch (e) { instrText.textContent = "Kamera tidak ditemukan atau ditolak oleh browser."; }
+    } catch (e) { instrText.textContent = "Kamera tidak ditemukan atau ditolak."; }
 }
-
 function stopCamera() { if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop()); }
+function handleBoxClick() { if(scanMode === 'file') document.getElementById('fileInput').click(); }
 
-function handleBoxClick() { 
-    if(scanMode === 'file') document.getElementById('fileInput').click(); 
-}
-
-// Eksekusi Pindaian saat Tombol Diklik
 function doScan() {
-    if(!s_aktif) { 
-        alert("PILIH NAMA SISWA TERLEBIH DAHULU DI PANEL KANAN!"); 
-        return; 
-    }
+    if(!s_aktif) { alert("PILIH NAMA SISWA TERLEBIH DAHULU!"); return; }
 
     const canvas = document.getElementById('hiddenCanvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     if(scanMode === 'camera') {
-        // Proses dari Kamera Langsung
         canvas.width = video.videoWidth; 
         canvas.height = video.videoHeight;
-        // Gambar apa yang ada di kamera ke memory (canvas)
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        processPixels(canvas, ctx); // Mulai pemrosesan tinta
+        processPixels(canvas, ctx);
     } else {
-        // Buka dialog file
         document.getElementById('fileInput').click();
     }
 }
@@ -320,7 +335,6 @@ function processUploadedFile(file) {
         previewImg.style.display = 'block';
         dropMsg.style.display = 'none';
         
-        // Load image ke memory untuk diproses
         const img = new Image();
         img.onload = () => {
             const canvas = document.getElementById('hiddenCanvas');
@@ -328,7 +342,7 @@ function processUploadedFile(file) {
             canvas.width = img.width; 
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
-            processPixels(canvas, ctx); // Mulai pemrosesan tinta
+            processPixels(canvas, ctx);
         };
         img.src = e.target.result;
     };
@@ -344,70 +358,65 @@ function processPixels(canvas, ctx) {
     const vh = canvas.height;
     const opsiArr = ['A','B','C','D'];
     
-    let logHTML = "<div style='color:var(--green);font-weight:bold;margin-bottom:5px'>HASIL PEMBACAAN SISTEM (PIXEL SCAN):</div>";
+    let logHTML = "<div style='color:var(--green);font-weight:bold;margin-bottom:5px'>HASIL PEMBACAAN SISTEM:</div>";
 
     for(let i=0; i<25; i++) {
-        // Hitung koordinat pencarian persis sama dengan koordinat Grid merah di UI
-        let isCol1 = i < 13;
-        let row = isCol1 ? i : i - 13;
-        let leftPct = isCol1 ? 5 : 55;
-        let topPct = 5 + (row * 7);
+        let col = i < 10 ? 0 : (i < 20 ? 1 : 2);
+        let row = i < 10 ? i : (i < 20 ? i - 10 : i - 20);
         
-        // Konversi persentase ke nilai pixel sungguhan dari lebar/tinggi gambar
+        let leftPct = col === 0 ? 13.5 : (col === 1 ? 40.0 : 66.5);
+        let topPct = 28.3 + (row * 2.43);
+        let tableW = 21; 
+        let rowH = 2.4;
+        
+        // Posisi dalam Pixel asli gambar
         let rowX = (leftPct / 100) * vw;
         let rowY = (topPct / 100) * vh;
-        let rowW = (40 / 100) * vw;
-        let rowH = (3 / 100) * vh;
+        let rowW_px = (tableW / 100) * vw;
+        let rowH_px = (rowH / 100) * vh;
 
         let darknessScores = [];
         
-        // Loop tiap opsi A, B, C, D di dalam baris nomor tersebut
         for(let j=0; j<4; j++) {
-            // Lebar 1 kotak opsi = 20% dari lebar baris. Sisakan 10% pertama untuk angka nomor.
-            let optX = rowX + (rowW * 0.1) + (j * (rowW * 0.22)); 
-            let optY = rowY;
-            let optW = rowW * 0.18; // Lebar bounding box tiap huruf
-            let optH = rowH;
+            // Area aman menghindari kotak tabel (seperti di createOMRGrid)
+            let boxLeftPct = 28 + (j * 18) + 4;
+            let boxTopPct = 15;
+            let boxWPct = 10;
+            let boxHPct = 70;
+            
+            let optX = rowX + (boxLeftPct / 100) * rowW_px;
+            let optY = rowY + (boxTopPct / 100) * rowH_px;
+            let optW = (boxWPct / 100) * rowW_px;
+            let optH = (boxHPct / 100) * rowH_px;
             
             try {
-                // Ambil ribuan titik piksel di dalam kotak tersebut
                 let imgData = ctx.getImageData(optX, optY, optW, optH).data;
                 let darkPixels = 0;
                 
                 for(let p=0; p<imgData.length; p+=4) {
                     let r = imgData[p], g = imgData[p+1], b = imgData[p+2];
                     let brightness = (r + g + b) / 3;
-                    
-                    // Semakin kecil angka brightness, semakin hitam warnanya.
-                    // Jika nilai brightness di bawah 120 (Gelap/Tinta Pena), hitung sebagai coretan.
                     if(brightness < 120) darkPixels++; 
                 }
                 darknessScores.push({ opsi: opsiArr[j], score: darkPixels });
-            } catch(e) { console.error("Canvas read error:", e); }
+            } catch(e) {}
         }
 
-        // Urutkan kotak dari yang paling banyak coretan tinta (score tertinggi) ke paling bersih
         darknessScores.sort((a,b) => b.score - a.score);
         
         let jawabanSiswa = [];
-        // Batas minimal bintik hitam agar sistem tidak menganggap debu/bayangan sebagai jawaban
         let THRESHOLD_CORETA = 10; 
 
         if (i < 20) {
-            // LOGIKA PENILAIAN SOAL 1-20 (Maks 1 Jawaban Benar)
-            if(darknessScores[0].score > THRESHOLD_CORETA) {
-                jawabanSiswa.push(darknessScores[0].opsi);
-            }
+            if(darknessScores[0].score > THRESHOLD_CORETA) jawabanSiswa.push(darknessScores[0].opsi);
             
             if(jawabanSiswa[0] === db_kunci[i]) {
-                poin += 2; // Betul dapat 2 poin
+                poin += 2; 
                 logHTML += `<span style="color:green">No ${i+1}: <b>${jawabanSiswa.join('')}</b> (Betul +2)</span><br>`;
             } else {
                 logHTML += `<span style="color:red">No ${i+1}: <b>${jawabanSiswa.join('') || 'Kosong'}</b> (Salah)</span><br>`;
             }
-            
         } else {
-            // LOGIKA PENILAIAN SOAL 21-25 (Pilihan Ganda Kompleks: Maks 2 Jawaban Benar)
             if(darknessScores[0].score > THRESHOLD_CORETA) jawabanSiswa.push(darknessScores[0].opsi);
             if(darknessScores[1].score > THRESHOLD_CORETA) jawabanSiswa.push(darknessScores[1].opsi);
             
@@ -418,18 +427,17 @@ function processPixels(canvas, ctx) {
             
             if(benarCount === 2) {
                 poin += 4;
-                logHTML += `<span style="color:green">No ${i+1} (Kmplks): <b>${jawabanSiswa.join(',')}</b> (Betul Sempurna +4)</span><br>`;
+                logHTML += `<span style="color:green">No ${i+1} (Kmplks): <b>${jawabanSiswa.join(',')}</b> (Sempurna +4)</span><br>`;
             }
             else if(benarCount === 1) {
                 poin += 2;
-                logHTML += `<span style="color:orange">No ${i+1} (Kmplks): <b>${jawabanSiswa.join(',')}</b> (Betul Sebagian +2)</span><br>`;
+                logHTML += `<span style="color:orange">No ${i+1} (Kmplks): <b>${jawabanSiswa.join(',')}</b> (Sebagian +2)</span><br>`;
             } else {
-                logHTML += `<span style="color:red">No ${i+1} (Kmplks): <b>${jawabanSiswa.join(',') || 'Kosong'}</b> (Salah/Kosong)</span><br>`;
+                logHTML += `<span style="color:red">No ${i+1} (Kmplks): <b>${jawabanSiswa.join(',') || 'Kosong'}</b> (Salah)</span><br>`;
             }
         }
     }
 
-    // 5. UPDATE UI HASIL SCAN
     const n_pg = Math.round((poin / 60) * 100); 
 
     const s = db_siswa.find(x => x.id == s_aktif);
@@ -440,15 +448,14 @@ function processPixels(canvas, ctx) {
     document.getElementById('resSiswa').textContent = scan_temp.name;
     document.getElementById('resPoin').textContent = poin;
     document.getElementById('resNilaiPG').textContent = n_pg;
-    document.getElementById('inManual').value = 0; // Reset nilai essay saat ganti anak
+    document.getElementById('inManual').value = 0; 
     updateTotal();
     
-    // Gulir otomatis layar ke hasil
     document.getElementById('resCard').scrollIntoView({behavior: "smooth", block: "start"});
 }
 
 // ==========================================
-// 6. UI HANDLING & DATABASE
+// 5. UI HANDLING & DATABASE
 // ==========================================
 function updateTotal() {
     const plus = parseInt(document.getElementById('inManual').value) || 0;
@@ -458,7 +465,6 @@ function updateTotal() {
 }
 
 function saveFinal() {
-    // Hapus nilai lama jika nama siswa sama, lalu masukkan yang baru (Replace)
     db_nilai = db_nilai.filter(n => !(n.name === scan_temp.name && n.kelas === scan_temp.kelas));
     db_nilai.unshift(scan_temp);
     localStorage.setItem('m_v18_nilai', JSON.stringify(db_nilai));
@@ -467,7 +473,6 @@ function saveFinal() {
     renderRekap();
     renderAbsen();
     
-    // Auto Next (Beralih otomatis ke nama siswa berikutnya di kelas yang sama)
     const list = db_siswa.filter(s => s.className === document.getElementById('selKelas').value);
     const idx = list.findIndex(s => s.id == s_aktif);
     if(list[idx+1]) {
@@ -483,11 +488,11 @@ function saveFinal() {
 function init() {
     const sel = document.getElementById('selKelas');
     sel.innerHTML = daftar_kelas.map(c => `<option value="${c}">${c}</option>`).join('');
-    createOMRGrid(); // Bangun kotak-kotak merah di kamera
+    createOMRGrid(); 
     renderKunci(); 
     renderMasterSiswa(); 
     changeKelas();
-    setScanMode('file'); // Default ke Mode File lebih disarankan untuk akurasi
+    setScanMode('file'); 
 }
 
 function renderKunci() {
@@ -575,7 +580,7 @@ function showPage(p, btn) {
 
 function importSiswa() {
     const raw = document.getElementById('csvIn').value.trim();
-    if(!raw) { alert("Kotak teks masih kosong!"); return; }
+    if(!raw) return;
     
     let added = 0;
     raw.split('\n').forEach(l => {
@@ -603,12 +608,11 @@ function renderMasterSiswa() {
             <tr style="background:#eee;"><th style="padding:8px;text-align:left;">NAMA SISWA</th><th style="padding:8px;text-align:left;">KELAS</th></tr>
             ${db_siswa.slice(0,100).map(x => `<tr style="border-bottom:1px solid #ddd"><td style="padding:6px;">${x.name}</td><td><b>${x.className}</b></td></tr>`).join('')}
         </table>
-        ${db_siswa.length > 100 ? '<p style="text-align:center;color:var(--muted);margin-top:10px;">(Hanya menampilkan 100 data pertama)</p>' : ''}
     `;
 }
 
 function resetSiswa() { 
-    if(confirm("AWAS! Ini akan MENGHAPUS SEMUA DATA SISWA DAN NILAI. Anda yakin?")) { 
+    if(confirm("Hapus semua data siswa dan nilai?")) { 
         db_siswa = []; db_nilai = []; 
         localStorage.clear(); 
         location.reload(); 
@@ -619,7 +623,7 @@ function backupData() {
     const blob = new Blob([JSON.stringify({db_siswa, db_nilai, db_kunci})], {type:'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
     let tgl = new Date().toISOString().slice(0,10);
-    a.download = `Backup_LJK_Full_${tgl}.json`; a.click();
+    a.download = `Backup_LJK_Custom_${tgl}.json`; a.click();
 }
 
 function restoreData(e) {
@@ -644,9 +648,8 @@ function restoreData(e) {
 function downloadCSV() {
     const kls = document.getElementById('selKelas').value;
     const list = db_nilai.filter(n => n.kelas === kls);
-    if(list.length === 0) { alert("Belum ada nilai untuk kelas ini."); return; }
+    if(list.length === 0) { alert("Belum ada nilai."); return; }
     
-    // UTF-8 BOM agar terbaca sempurna di Microsoft Excel (tidak rusak hurufnya)
     let csv = "\uFEFFNAMA,KELAS,POIN PG,NILAI PG,ESSAY,TOTAL\n";
     list.forEach(n => { csv += `"${n.name}","${n.kelas}",${n.poin},${n.n_pg},${n.n_uraian},${n.total}\n`; });
     
@@ -655,15 +658,10 @@ function downloadCSV() {
     a.download = `Rekap_Nilai_Kelas_${kls}.csv`; a.click();
 }
 
-// Pintasan Keyboard (Tombol Enter)
 window.addEventListener('keydown', (e) => {
-    // Jika kartu hasil scan sedang terbuka dan user menekan ENTER
-    if(e.key === "Enter" && document.getElementById('resCard').style.display === 'block') {
-        saveFinal();
-    }
+    if(e.key === "Enter" && document.getElementById('resCard').style.display === 'block') saveFinal();
 });
 
-// Jalankan sistem pertama kali
 init();
 </script>
 </body>
